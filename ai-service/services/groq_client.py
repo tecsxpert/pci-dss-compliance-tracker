@@ -1,41 +1,33 @@
 import os
-import requests
-from dotenv import load_dotenv
-import time
-
-load_dotenv()
-
-API_KEY = os.getenv("GROQ_API_KEY")
+from groq import Groq
 
 class GroqClient:
-
     def __init__(self):
-        self.url = "https://api.groq.com/openai/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }
+        api_key = os.getenv("GROQ_API_KEY")
 
-    def generate(self, prompt, retries=3):
-        data = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3
-        }
+        if not api_key:
+            raise ValueError("GROQ_API_KEY is not set")
 
-        for attempt in range(retries):
-            try:
-                response = requests.post(self.url, headers=self.headers, json=data)
+        self.client = Groq(api_key=api_key)
 
-                if response.status_code == 200:
-                    return response.json()["choices"][0]["message"]["content"]
+    def generate(self, question, context):
+        prompt = f"""
+You are a PCI DSS expert.
 
-                else:
-                    print("Error:", response.text)
+Context:
+{context}
 
-            except Exception as e:
-                print("Exception:", str(e))
+Question:
+{question}
 
-            time.sleep(2 ** attempt)
+Answer clearly:
+"""
 
-        return "Fallback: AI unavailable"
+        response = self.client.chat.completions.create(
+    model="llama-3.1-8b-instant",   # ✅ UPDATED MODEL
+    messages=[
+        {"role": "user", "content": prompt}
+    ]
+)
+
+        return response.choices[0].message.content
