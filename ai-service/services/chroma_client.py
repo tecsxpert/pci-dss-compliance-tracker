@@ -1,7 +1,7 @@
 import os
 import logging
-from sentence_transformers import SentenceTransformer
 import chromadb
+from chromadb.utils import embedding_functions
 
 logger = logging.getLogger(__name__)
 
@@ -11,14 +11,14 @@ class ChromaClient:
         self.client = chromadb.PersistentClient(path="./chroma_data")
         self.collection_name = "pci_dss_knowledge"
 
-        # Load embedding model
-        logger.info("Loading sentence-transformers model...")
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        logger.info("Model loaded successfully")
+        # Use ChromaDB default embedding function (no sentence-transformers needed)
+        self.embedding_fn = embedding_functions.DefaultEmbeddingFunction()
+        logger.info("ChromaDB embedding function ready")
 
         # Get or create collection
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,
+            embedding_function=self.embedding_fn,
             metadata={"hnsw:space": "cosine"}
         )
         logger.info(f"ChromaDB collection ready: {self.collection_name}")
@@ -36,6 +36,10 @@ class ChromaClient:
 
     def load_documents(self, docs_folder: str = "./docs"):
         total_chunks = 0
+        if not os.path.exists(docs_folder):
+            logger.warning(f"Docs folder not found: {docs_folder}")
+            return 0
+
         for filename in os.listdir(docs_folder):
             if filename.endswith(".txt"):
                 filepath = os.path.join(docs_folder, filename)
@@ -49,15 +53,16 @@ class ChromaClient:
                     doc_id = f"{filename}_{i}"
 
                     # Check if already exists
-                    existing = self.collection.get(ids=[doc_id])
-                    if existing["ids"]:
-                        continue
+                    try:
+                        existing = self.collection.get(ids=[doc_id])
+                        if existing["ids"]:
+                            continue
+                    except Exception:
+                        pass
 
-                    # Embed and store
-                    embedding = self.model.encode(chunk).tolist()
+                    # Store chunk (embedding handled automatically)
                     self.collection.add(
                         ids=[doc_id],
-                        embeddings=[embedding],
                         documents=[chunk],
                         metadatas=[{"source": filename, "chunk_index": i}]
                     )
@@ -67,12 +72,15 @@ class ChromaClient:
         return total_chunks
 
     def query(self, question: str, n_results: int = 3):
-        embedding = self.model.encode(question).tolist()
-        results = self.collection.query(
-            query_embeddings=[embedding],
-            n_results=n_results
-        )
-        return results
+        try:
+            results = self.collection.query(
+                query_texts=[question],
+                n_results=n_results
+            )
+            return results
+        except Exception as e:
+            logger.error(f"ChromaDB query error: {str(e)}")
+            return {"documents": [[]], "metadatas": [[]]}
 
     def get_doc_count(self):
         return self.collection.count()
