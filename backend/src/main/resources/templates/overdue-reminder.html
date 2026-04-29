@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Overdue Compliance Reminder</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #d32f2f, #b71c1c); color: #fff; padding: 24px 30px; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .body { padding: 30px; color: #333; line-height: 1.6; }
+        .detail-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .detail-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .detail-table td:first-child { font-weight: 600; color: #555; width: 40%; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+        .badge-overdue { background: #fce4ec; color: #c62828; }
+        .cta { display: inline-block; margin-top: 20px; padding: 12px 28px; background: #d32f2f; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .footer { padding: 16px 30px; background: #f9f9f9; color: #999; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>⚠️ Overdue Compliance Record</h1>
+    </div>
+    <div class="body">
+        <p>The following PCI-DSS compliance record is <strong>past its due date</strong> and requires immediate attention:</p>
+
+        <table class="detail-table">
+            <tr>
+                <td>Requirement</td>
+                <td th:text="${requirementId}">Req-1.1</td>
+            </tr>
+            <tr>
+                <td>Title</td>
+                <td th:text="${title}">Firewall Configuration Review</td>
+            </tr>
+            <tr>
+                <td>Due Date</td>
+                <td><span class="badge badge-overdue" th:text="${dueDate}">2026-04-15</span></td>
+            </tr>
+            <tr>
+                <td>Current Status</td>
+                <td th:text="${status}">IN_PROGRESS</td>
+            </tr>
+            <tr>
+                <td>Compliance Score</td>
+                <td th:text="${complianceScore} + '%'">45.00%</td>
+            </tr>
+        </table>
+
+        <p>Please update this record or take corrective action as soon as possible to maintain PCI-DSS compliance.</p>
+
+        <a class="cta" href="#">Review &amp; Update Record</a>
+    </div>
+    <div class="footer">
+        PCI-DSS Compliance Tracker — Automated Reminder
+    </div>
+</div>
+</body>
+</html>
