@@ -62,3 +62,11 @@ jwt:
 # AI Service
 ai-service:
   base-url: ${AI_SERVICE_URL:http://localhost:5000}
+
+# Scheduler Configuration
+scheduler:
+  admin-email: ${SCHEDULER_ADMIN_EMAIL:admin@pcidss-demo.com}
+  cron:
+    overdue-reminder: ${SCHEDULER_CRON_OVERDUE:0 0 8 * * ?}
+    deadline-alert: ${SCHEDULER_CRON_DEADLINE:0 0 9 * * ?}
+    weekly-summary: ${SCHEDULER_CRON_WEEKLY:0 0 7 ? * MON}

@@ -55,4 +55,30 @@ public interface ComplianceRecordRepository extends JpaRepository<ComplianceReco
 
     @Query("SELECT COUNT(c) FROM ComplianceRecord c WHERE c.isDeleted = false")
     long countActiveRecords();
+
+    /**
+     * Finds all non-deleted, non-compliant records whose due date has passed.
+     * Used by the daily overdue-reminder scheduler job.
+     */
+    @Query("SELECT c FROM ComplianceRecord c " +
+           "WHERE c.isDeleted = false " +
+           "AND c.dueDate < :today " +
+           "AND c.status <> :excludedStatus")
+    List<ComplianceRecord> findOverdueRecords(
+            @Param("today") LocalDate today,
+            @Param("excludedStatus") String excludedStatus);
+
+    /**
+     * Finds all non-deleted, non-compliant records whose due date falls
+     * between {@code start} (inclusive) and {@code end} (inclusive).
+     * Used by the 7-day advance deadline-alert scheduler job.
+     */
+    @Query("SELECT c FROM ComplianceRecord c " +
+           "WHERE c.isDeleted = false " +
+           "AND c.dueDate BETWEEN :start AND :end " +
+           "AND c.status <> :excludedStatus")
+    List<ComplianceRecord> findUpcomingDeadlineRecords(
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end,
+            @Param("excludedStatus") String excludedStatus);
 }
