@@ -6,10 +6,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * JPA entity mapping to the {@code compliance_records} table.
- * Represents a single PCI-DSS compliance requirement tracking record.
- */
 @Entity
 @Table(name = "compliance_records")
 public class ComplianceRecord {
@@ -80,8 +76,6 @@ public class ComplianceRecord {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
-    // ======================== Getters & Setters ========================
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
