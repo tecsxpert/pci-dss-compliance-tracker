@@ -57,6 +57,13 @@ public interface ComplianceRecordRepository extends JpaRepository<ComplianceReco
     long countActiveRecords();
 
     /**
+     * Returns all non-deleted compliance records without pagination.
+     * Used exclusively by the CSV export service.
+     */
+    @Query("SELECT c FROM ComplianceRecord c WHERE c.isDeleted = false ORDER BY c.createdAt DESC")
+    List<ComplianceRecord> findAllActiveForExport();
+
+    /**
      * Finds all non-deleted, non-compliant records whose due date has passed.
      * Used by the daily overdue-reminder scheduler job.
      */

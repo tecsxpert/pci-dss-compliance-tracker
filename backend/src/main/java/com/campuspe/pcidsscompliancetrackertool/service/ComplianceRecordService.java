@@ -106,9 +106,33 @@ public class ComplianceRecordService {
         repository.save(record);
     }
 
+    /**
+     * Returns all active (non-deleted) compliance records with pagination.
+     *
+     * @param pageable pagination and sort parameters
+     * @return a page of compliance record response DTOs
+     */
+    public Page<ComplianceRecordResponseDTO> getAllRecords(Pageable pageable) {
+        return repository.findAllActiveRecords(pageable)
+                .map(this::toResponseDTO);
+    }
+
+    /**
+     * Searches compliance records by keyword with pagination.
+     */
     public Page<ComplianceRecordResponseDTO> searchRecords(String keyword, Pageable pageable) {
         return repository.searchByKeywordPaginated(keyword, pageable)
                 .map(this::toResponseDTO);
+    }
+
+    /**
+     * Fetches all non-deleted compliance records without pagination.
+     * Used exclusively for CSV export operations.
+     *
+     * @return complete list of active compliance records
+     */
+    public List<ComplianceRecord> getAllForExport() {
+        return repository.findAllActiveForExport();
     }
 
     public ComplianceStatsResponseDTO getStatistics() {

@@ -4,7 +4,9 @@ import com.campuspe.pcidsscompliancetrackertool.config.RoleConstants;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceRecordResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceStatsResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceUpdateRequestDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.PagedResponseDto;
 import com.campuspe.pcidsscompliancetrackertool.service.ComplianceRecordService;
+import com.campuspe.pcidsscompliancetrackertool.util.PageableBuilder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,11 +15,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,6 +28,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/compliance-records")
 @Tag(name = "Compliance Records", description = "Endpoints for PCI-DSS compliance record management")
+@Validated
 public class ComplianceRecordController {
 
     private final ComplianceRecordService complianceRecordService;
@@ -32,6 +36,48 @@ public class ComplianceRecordController {
     public ComplianceRecordController(ComplianceRecordService complianceRecordService) {
         this.complianceRecordService = complianceRecordService;
     }
+
+    // ── Paginated list of all active records ─────────────────────────────────
+
+    @Operation(
+            summary = "List all compliance records (paginated)",
+            description = "Returns a paginated, sorted list of all active (non-deleted) " +
+                          "compliance records."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Paginated list returned successfully",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid pagination or sort parameters",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @GetMapping
+    @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
+    public ResponseEntity<PagedResponseDto<ComplianceRecordResponseDTO>> getAllRecords(
+            @Parameter(description = "Zero-based page index")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+
+            @Parameter(description = "Page size (max 100)")
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+
+            @Parameter(description = "Field to sort by")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Pageable pageable = PageableBuilder.buildPageable(page, size, sortBy, sortDir);
+        PagedResponseDto<ComplianceRecordResponseDTO> response =
+                PagedResponseDto.fromPage(complianceRecordService.getAllRecords(pageable));
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
 
     @Operation(
             summary = "Update a compliance record",
@@ -69,6 +115,8 @@ public class ComplianceRecordController {
         return ResponseEntity.ok(updated);
     }
 
+    // ── Soft-delete ──────────────────────────────────────────────────────────
+
     @Operation(
             summary = "Soft-delete a compliance record",
             description = "Marks the record as deleted (isDeleted = true). " +
@@ -95,10 +143,12 @@ public class ComplianceRecordController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── Search (paginated) ───────────────────────────────────────────────────
+
     @Operation(
-            summary = "Search compliance records",
+            summary = "Search compliance records (paginated)",
             description = "Case-insensitive keyword search across title, description, " +
-                          "and requirementId. Returns paginated results."
+                          "and requirementId. Returns paginated, sorted results."
     )
     @ApiResponses({
             @ApiResponse(
@@ -114,14 +164,29 @@ public class ComplianceRecordController {
     })
     @GetMapping("/search")
     @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
-    public ResponseEntity<Page<ComplianceRecordResponseDTO>> searchRecords(
+    public ResponseEntity<PagedResponseDto<ComplianceRecordResponseDTO>> searchRecords(
             @Parameter(description = "Search keyword", required = true)
             @RequestParam("q") String q,
-            @PageableDefault(size = 20, sort = "title") Pageable pageable) {
 
-        Page<ComplianceRecordResponseDTO> results = complianceRecordService.searchRecords(q, pageable);
-        return ResponseEntity.ok(results);
+            @Parameter(description = "Zero-based page index")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+
+            @Parameter(description = "Page size (max 100)")
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+
+            @Parameter(description = "Field to sort by")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Pageable pageable = PageableBuilder.buildPageable(page, size, sortBy, sortDir);
+        PagedResponseDto<ComplianceRecordResponseDTO> response =
+                PagedResponseDto.fromPage(complianceRecordService.searchRecords(q, pageable));
+        return ResponseEntity.ok(response);
     }
+
+    // ── Statistics ────────────────────────────────────────────────────────────
 
     @Operation(
             summary = "Get compliance statistics",
