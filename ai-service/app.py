@@ -1,20 +1,23 @@
-# ============================================================================
-# PCI-DSS Compliance Tracker — AI Service (Flask Entry Point)
-# ============================================================================
+from flask import Flask, jsonify
+from routes.query import query_bp
 
-from flask import Flask
+def create_app():
+    app = Flask(__name__)
 
-app = Flask(__name__)
+    # Register blueprints
+    app.register_blueprint(query_bp)
 
-# Register route blueprints
-# from routes.describe import describe_bp
-# from routes.recommend import recommend_bp
-# app.register_blueprint(describe_bp)
-# app.register_blueprint(recommend_bp)
+    # Health check route
+    @app.route("/", methods=["GET"])
+    def home():
+        return jsonify({
+            "status": "running",
+            "message": "PCI DSS AI Service is up"
+        })
 
-@app.route("/health")
-def health():
-    return {"status": "ok"}
+    return app
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app = create_app()
+    app.run(debug=True)
