@@ -1,7 +1,7 @@
 package com.internship.tool.controller;
 
-import com.internship.tool.entity.User;
 import com.internship.tool.service.UserService;
+import com.internship.tool.dto.UserDTO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,28 +15,28 @@ public class TestController {
         this.userService = userService;
     }
 
-    // GET all users
+    // ✅ GET
     @GetMapping("/users")
-    public List<User> getUsers() {
+    public List<UserDTO> getUsers() {
         return userService.getAllUsers();
     }
 
-    // POST create user
+    // ✅ POST
     @PostMapping("/users")
-    public User createUser(@RequestBody User user) {
-        return userService.saveUser(user);
+    public UserDTO createUser(@RequestBody UserDTO userDTO) {
+        return userService.saveUser(userDTO);
     }
 
-    // DELETE user
+    // ✅ DELETE
     @DeleteMapping("/users/{id}")
     public String deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return "User deleted";
     }
 
-    // UPDATE user
+    // ✅ UPDATE (FIXED → use DTO)
     @PutMapping("/users/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        return userService.updateUser(id, user);
+    public UserDTO updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
+        return userService.updateUser(id, userDTO);
     }
 }
