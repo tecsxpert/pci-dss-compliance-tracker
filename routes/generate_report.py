@@ -1,82 +1,70 @@
 import json
-import logging
+import threading
 from flask import Blueprint, request, jsonify
+
+from services.job_service import create_job, update_job, get_job
 from services.shared import groq_client
-from datetime import datetime, timezone
 
+# ✅ Blueprint (VERY IMPORTANT)
 generate_report_bp = Blueprint("generate_report", __name__)
-logger = logging.getLogger(__name__)
-
-MODEL_NAME = "llama-3.3-70b-versatile"
 
 
-def build_error_meta():
-    return {
-        "confidence": 0.0,
-        "model_used": MODEL_NAME,
-        "tokens_used": 0,
-        "response_time_ms": 0,
-        "cached": False
-    }
-
-
-def clean_response(text):
-    text = text.strip()
-    if text.startswith("```json"):
-        text = text[7:]
-    if text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
-    return text.strip()
-
-
-@generate_report_bp.route("/generate-report", methods=["POST"])
-def generate_report():
-    data = request.get_json(silent=True)
-
-    if not data:
-        return jsonify({
-            "data": {
-                "error": "Request body is required",
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            },
-            "meta": build_error_meta()
-        }), 400
-
-    input_text = json.dumps(data, indent=2)
-
+# ================== BACKGROUND FUNCTION ==================
+def process_report(job_id, input_text):
     prompt = f"""
 You are a PCI-DSS compliance expert.
 
-Generate a professional compliance report based on this data:
+Generate a detailed compliance report for:
 
 {input_text}
 
-Return JSON only:
+Return JSON:
 {{
-  "title": "PCI-DSS Compliance Report",
-  "executive_summary": "Summary",
-  "overview": "Overview",
-  "top_items": ["item 1", "item 2", "item 3"],
-  "recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
-  "generated_at": "{datetime.now(timezone.utc).isoformat()}"
+  "summary": "...",
+  "risks": ["..."],
+  "recommendations": ["..."]
 }}
 """
 
-    result = groq_client.call(prompt, temperature=0.3, max_tokens=1500)
+    result = groq_client.call(prompt)
+
+    # ✅ clean + parse JSON
+    clean_text = result["data"].replace("```json", "").replace("```", "").strip()
 
     try:
-        parsed = json.loads(clean_response(result["data"]))
-        return jsonify({
-            "data": parsed,
-            "meta": result["meta"]
-        }), 200
-    except Exception:
-        return jsonify({
-            "data": {
-                "raw_response": result.get("data", ""),
-                "generated_at": datetime.now(timezone.utc).isoformat()
-            },
-            "meta": result.get("meta", build_error_meta())
-        }), 200
+        parsed = json.loads(clean_text)
+    except:
+        parsed = {"raw": clean_text}
+
+    update_job(job_id, {
+        "data": parsed,
+        "meta": result["meta"]
+    })
+
+
+# ================== MAIN API ==================
+@generate_report_bp.route("/generate-report", methods=["POST"])
+def generate_report():
+    data = request.get_json()
+    input_text = data.get("input", "")
+
+    job_id = create_job()
+
+    thread = threading.Thread(target=process_report, args=(job_id, input_text))
+    thread.start()
+
+    return jsonify({
+        "job_id": job_id,
+        "status": "processing"
+    }), 202
+
+
+# ================== JOB STATUS API ==================
+@generate_report_bp.route("/job/<job_id>", methods=["GET"])
+def get_job_status(job_id):
+    job = get_job(job_id)
+
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify(job), 200
