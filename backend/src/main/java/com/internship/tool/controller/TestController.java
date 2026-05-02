@@ -94,7 +94,7 @@ public class TestController {
         );
     }
 
-    // 🔥 ADVANCED FILTERING (CLEAN RESPONSE)
+    // ADVANCED FILTERING (clean response)
     @GetMapping("/users/search")
     public ApiResponse<Map<String, Object>> searchUsers(
             @RequestParam(required = false) String name,
@@ -113,6 +113,19 @@ public class TestController {
                 "success",
                 "Users fetched successfully",
                 response
+        );
+    }
+
+    // JPQL SEARCH (Day 7)
+    @GetMapping("/users/search/jpql")
+    public ApiResponse<List<UserDTO>> searchUsersJPQL(@RequestParam String name) {
+
+        List<UserDTO> users = userService.searchUsersJPQL(name);
+
+        return new ApiResponse<>(
+                "success",
+                "Users fetched using JPQL",
+                users
         );
     }
 }

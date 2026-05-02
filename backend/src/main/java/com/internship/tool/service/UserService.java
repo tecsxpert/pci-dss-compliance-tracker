@@ -20,7 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    // 🔥 Logger (Day 6 upgrade)
+    // 🔥 Logger
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public UserService(UserRepository userRepository) {
@@ -56,9 +56,8 @@ public class UserService {
                 .toList();
     }
 
-    // ✅ 🔥 ADVANCED SEARCH (name + email + pagination)
+    // ✅ ADVANCED SEARCH (name + email + pagination)
     public Page<UserDTO> searchUsers(String name, String email, Pageable pageable) {
-
         logger.info("Advanced search - name: {}, email: {}", name, email);
 
         return userRepository
@@ -68,6 +67,16 @@ public class UserService {
                         pageable
                 )
                 .map(user -> new UserDTO(user.getName(), user.getEmail()));
+    }
+
+    //JPQL SEARCH (Day 7)
+    public List<UserDTO> searchUsersJPQL(String name) {
+        logger.info("Searching users using JPQL for name: {}", name);
+
+        return userRepository.searchByNameJPQL(name)
+                .stream()
+                .map(user -> new UserDTO(user.getName(), user.getEmail()))
+                .toList();
     }
 
     // ✅ POST
