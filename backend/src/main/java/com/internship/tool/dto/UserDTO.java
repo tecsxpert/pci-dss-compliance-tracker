@@ -1,8 +1,15 @@
 package com.internship.tool.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 public class UserDTO {
 
+    @NotBlank(message = "Name cannot be empty")
     private String name;
+
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email cannot be empty")
     private String email;
 
     public UserDTO() {}

@@ -1,6 +1,7 @@
 package com.internship.tool.service;
 
 import com.internship.tool.entity.User;
+import com.internship.tool.exception.UserNotFoundException;
 import com.internship.tool.repository.UserRepository;
 import com.internship.tool.dto.UserDTO;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,7 @@ public class UserService {
     // ✅ UPDATE (DTO → Entity → DTO) ✅ FIXED
     public UserDTO updateUser(Long id, UserDTO userDTO) {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
         existingUser.setName(userDTO.getName());
         existingUser.setEmail(userDTO.getEmail());
