@@ -4,6 +4,7 @@ import com.campuspe.pcidsscompliancetrackertool.config.RoleConstants;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceRecordResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceStatsResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceUpdateRequestDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.CreateComplianceRecordDto;
 import com.campuspe.pcidsscompliancetrackertool.dto.PagedResponseDto;
 import com.campuspe.pcidsscompliancetrackertool.service.ComplianceRecordService;
 import com.campuspe.pcidsscompliancetrackertool.util.PageableBuilder;
@@ -18,8 +19,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +40,71 @@ public class ComplianceRecordController {
         this.complianceRecordService = complianceRecordService;
     }
 
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Create a compliance record",
+            description = "Creates a new PCI-DSS compliance record. Accessible by ADMIN and MANAGER roles."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Record created successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceRecordResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error in request body",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @PostMapping
+    @PreAuthorize(RoleConstants.HAS_ROLE_ADMIN_OR_MANAGER)
+    public ResponseEntity<ComplianceRecordResponseDTO> createRecord(
+            @Valid @RequestBody CreateComplianceRecordDto dto,
+            Authentication authentication) {
+
+        String username = (authentication != null) ? authentication.getName() : "system";
+        ComplianceRecordResponseDTO created = complianceRecordService.createRecord(dto, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    // ── Get by ID ────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Get a compliance record by ID",
+            description = "Retrieves a single active (non-deleted) compliance record by its UUID."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Record found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceRecordResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Compliance record not found or soft-deleted",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @GetMapping("/{id}")
+    @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
+    public ResponseEntity<ComplianceRecordResponseDTO> getRecordById(
+            @Parameter(description = "UUID of the compliance record", required = true)
+            @PathVariable UUID id) {
+
+        ComplianceRecordResponseDTO response = complianceRecordService.getRecordById(id);
+        return ResponseEntity.ok(response);
+    }
+
     // ── Paginated list of all active records ─────────────────────────────────
+
 
     @Operation(
             summary = "List all compliance records (paginated)",

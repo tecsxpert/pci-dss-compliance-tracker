@@ -3,6 +3,7 @@ package com.campuspe.pcidsscompliancetrackertool.service;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceRecordResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceStatsResponseDTO;
 import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceUpdateRequestDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.CreateComplianceRecordDto;
 import com.campuspe.pcidsscompliancetrackertool.entity.ComplianceRecord;
 import com.campuspe.pcidsscompliancetrackertool.exception.ResourceNotFoundException;
 import com.campuspe.pcidsscompliancetrackertool.repository.ComplianceRecordRepository;
@@ -51,6 +52,55 @@ public class ComplianceRecordService {
                 .updatedBy(entity.getUpdatedBy())
                 .build();
     }
+
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    /**
+     * Creates and persists a new compliance record.
+     *
+     * @param dto       the creation request payload
+     * @param createdBy username of the authenticated user performing the action
+     * @return the persisted record as a response DTO
+     */
+    @Transactional
+    public ComplianceRecordResponseDTO createRecord(CreateComplianceRecordDto dto, String createdBy) {
+        ComplianceRecord record = new ComplianceRecord();
+        record.setRequirementId(dto.getRequirementId());
+        record.setTitle(dto.getTitle());
+        record.setDescription(dto.getDescription());
+        record.setStatus(dto.getStatus());
+        record.setComplianceScore(dto.getComplianceScore());
+        record.setAssignedTo(dto.getAssignedTo());
+        record.setDueDate(dto.getDueDate());
+        record.setReviewDate(dto.getReviewDate());
+        record.setEvidenceNotes(dto.getEvidenceNotes());
+        record.setAiDescription(dto.getAiDescription());
+        record.setAiRecommendations(dto.getAiRecommendations());
+        record.setCreatedBy(createdBy);
+        record.setUpdatedBy(createdBy);
+        record.setIsDeleted(false);
+
+        ComplianceRecord saved = repository.save(record);
+        return toResponseDTO(saved);
+    }
+
+    // ── Read by ID ────────────────────────────────────────────────────────────
+
+    /**
+     * Retrieves a single active compliance record by its UUID.
+     *
+     * @param id record UUID
+     * @return the record as a response DTO
+     * @throws ResourceNotFoundException if the record does not exist or is soft-deleted
+     */
+    public ComplianceRecordResponseDTO getRecordById(UUID id) {
+        ComplianceRecord record = repository.findById(id)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("ComplianceRecord", "id", id));
+        return toResponseDTO(record);
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────
 
     @Transactional
     public ComplianceRecordResponseDTO updateRecord(UUID id, ComplianceUpdateRequestDTO dto) {
