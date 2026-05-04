@@ -1,0 +1,34 @@
+Day 6 - Prompt Evaluation Results
+
+Tested 10 real PCI DSS questions and evaluated responses based on:
+- Accuracy
+- Completeness
+- Clarity
+
+Results:
+
+1. What is PCI DSS requirement 3? → 3/10 (No relevant data returned)
+2. How should cardholder data be stored? → 9/10 (Clear, detailed, accurate)
+3. What is encryption in PCI DSS? → 9/10 (Well explained with examples)
+4. Why are firewalls important in PCI DSS? → 9/10 (Accurate and structured)
+5. What is requirement 1 in PCI DSS? → 8/10 (Correct but slightly brief)
+6. How to secure payment data? → 9/10 (Comprehensive answer)
+7. What are PCI DSS compliance steps? → 3/10 (No relevant data)
+8. What is sensitive authentication data? → 3/10 (No relevant data)
+9. How to prevent data breaches in PCI DSS? → 9/10 (Detailed and useful)
+10. What are best practices for card data protection? → 9/10 (Very strong answer)
+
+Summary:
+- High-quality responses for most security-related questions
+- Weak responses due to missing knowledge base data
+- Improvement needed for:
+  - Requirement-specific queries
+  - Sensitive authentication data
+  - Compliance steps
+
+Action Taken:
+- Identified missing topics in Chroma DB
+- Plan to add more structured PCI DSS data for better retrieval
+
+Conclusion:
+Prompt performs well when relevant data is available, but depends heavily on database coverage.

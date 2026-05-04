@@ -6,16 +6,14 @@ db = ChromaService()
 
 print("Adding data...")
 
-db.add_data("Cardholder data must be encrypted using strong cryptography like AES-256", "req1")
-print("Added 1")
+db.add_data("PCI DSS Requirement 1 install firewall to protect cardholder data", "req1")
 
-db.add_data("Use firewalls to protect cardholder data from unauthorized access", "req2")
-print("Added 2")
+db.add_data("PCI DSS Requirement 3 protect stored cardholder data using encryption", "req3")
 
-db.add_data("Access to card data must be restricted based on business need-to-know", "req3")
-print("Added 3")
+db.add_data("PCI DSS compliance steps include firewall encryption access control and monitoring", "steps1")
 
-db.add_data("Do not store sensitive authentication data after authorization", "req4")
-print("Added 4")
+db.add_data("Sensitive authentication data includes CVV PIN and track data and must not be stored", "sad1")
+
+db.add_data("Cardholder data storage must use encryption and secure access control", "storage1")
 
 print("✅ Data inserted successfully!")
