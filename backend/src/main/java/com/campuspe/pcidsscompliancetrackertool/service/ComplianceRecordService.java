@@ -1,0 +1,215 @@
+package com.campuspe.pcidsscompliancetrackertool.service;
+
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceRecordResponseDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceStatsResponseDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceUpdateRequestDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.CreateComplianceRecordDto;
+import com.campuspe.pcidsscompliancetrackertool.entity.ComplianceRecord;
+import com.campuspe.pcidsscompliancetrackertool.exception.ResourceNotFoundException;
+import com.campuspe.pcidsscompliancetrackertool.repository.ComplianceRecordRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+@Transactional(readOnly = true)
+public class ComplianceRecordService {
+
+    private static final String COMPLIANT_STATUS = "COMPLIANT";
+
+    private final ComplianceRecordRepository repository;
+
+    public ComplianceRecordService(ComplianceRecordRepository repository) {
+        this.repository = repository;
+    }
+
+    public ComplianceRecordResponseDTO toResponseDTO(ComplianceRecord entity) {
+        return ComplianceRecordResponseDTO.builder()
+                .id(entity.getId())
+                .requirementId(entity.getRequirementId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .status(entity.getStatus())
+                .complianceScore(entity.getComplianceScore())
+                .assignedTo(entity.getAssignedTo())
+                .dueDate(entity.getDueDate())
+                .reviewDate(entity.getReviewDate())
+                .evidenceNotes(entity.getEvidenceNotes())
+                .aiDescription(entity.getAiDescription())
+                .aiRecommendations(entity.getAiRecommendations())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .createdBy(entity.getCreatedBy())
+                .updatedBy(entity.getUpdatedBy())
+                .build();
+    }
+
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    /**
+     * Creates and persists a new compliance record.
+     *
+     * @param dto       the creation request payload
+     * @param createdBy username of the authenticated user performing the action
+     * @return the persisted record as a response DTO
+     */
+    @Transactional
+    public ComplianceRecordResponseDTO createRecord(CreateComplianceRecordDto dto, String createdBy) {
+        ComplianceRecord record = new ComplianceRecord();
+        record.setRequirementId(dto.getRequirementId());
+        record.setTitle(dto.getTitle());
+        record.setDescription(dto.getDescription());
+        record.setStatus(dto.getStatus());
+        record.setComplianceScore(dto.getComplianceScore());
+        record.setAssignedTo(dto.getAssignedTo());
+        record.setDueDate(dto.getDueDate());
+        record.setReviewDate(dto.getReviewDate());
+        record.setEvidenceNotes(dto.getEvidenceNotes());
+        record.setAiDescription(dto.getAiDescription());
+        record.setAiRecommendations(dto.getAiRecommendations());
+        record.setCreatedBy(createdBy);
+        record.setUpdatedBy(createdBy);
+        record.setIsDeleted(false);
+
+        ComplianceRecord saved = repository.save(record);
+        return toResponseDTO(saved);
+    }
+
+    // ── Read by ID ────────────────────────────────────────────────────────────
+
+    /**
+     * Retrieves a single active compliance record by its UUID.
+     *
+     * @param id record UUID
+     * @return the record as a response DTO
+     * @throws ResourceNotFoundException if the record does not exist or is soft-deleted
+     */
+    public ComplianceRecordResponseDTO getRecordById(UUID id) {
+        ComplianceRecord record = repository.findById(id)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("ComplianceRecord", "id", id));
+        return toResponseDTO(record);
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public ComplianceRecordResponseDTO updateRecord(UUID id, ComplianceUpdateRequestDTO dto) {
+        ComplianceRecord record = repository.findById(id)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("ComplianceRecord", "id", id));
+
+        if (dto.getRequirementId() != null) {
+            record.setRequirementId(dto.getRequirementId());
+        }
+        if (dto.getTitle() != null) {
+            record.setTitle(dto.getTitle());
+        }
+        if (dto.getDescription() != null) {
+            record.setDescription(dto.getDescription());
+        }
+        if (dto.getStatus() != null) {
+            record.setStatus(dto.getStatus());
+        }
+        if (dto.getComplianceScore() != null) {
+            record.setComplianceScore(dto.getComplianceScore());
+        }
+        if (dto.getAssignedTo() != null) {
+            record.setAssignedTo(dto.getAssignedTo());
+        }
+        if (dto.getDueDate() != null) {
+            record.setDueDate(dto.getDueDate());
+        }
+        if (dto.getReviewDate() != null) {
+            record.setReviewDate(dto.getReviewDate());
+        }
+        if (dto.getEvidenceNotes() != null) {
+            record.setEvidenceNotes(dto.getEvidenceNotes());
+        }
+        if (dto.getAiDescription() != null) {
+            record.setAiDescription(dto.getAiDescription());
+        }
+        if (dto.getAiRecommendations() != null) {
+            record.setAiRecommendations(dto.getAiRecommendations());
+        }
+
+        ComplianceRecord saved = repository.save(record);
+        return toResponseDTO(saved);
+    }
+
+    @Transactional
+    public void softDeleteRecord(UUID id) {
+        ComplianceRecord record = repository.findById(id)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new ResourceNotFoundException("ComplianceRecord", "id", id));
+
+        record.setIsDeleted(true);
+        repository.save(record);
+    }
+
+    /**
+     * Returns all active (non-deleted) compliance records with pagination.
+     *
+     * @param pageable pagination and sort parameters
+     * @return a page of compliance record response DTOs
+     */
+    public Page<ComplianceRecordResponseDTO> getAllRecords(Pageable pageable) {
+        return repository.findAllActiveRecords(pageable)
+                .map(this::toResponseDTO);
+    }
+
+    /**
+     * Searches compliance records by keyword with pagination.
+     */
+    public Page<ComplianceRecordResponseDTO> searchRecords(String keyword, Pageable pageable) {
+        return repository.searchByKeywordPaginated(keyword, pageable)
+                .map(this::toResponseDTO);
+    }
+
+    /**
+     * Fetches all non-deleted compliance records without pagination.
+     * Used exclusively for CSV export operations.
+     *
+     * @return complete list of active compliance records
+     */
+    public List<ComplianceRecord> getAllForExport() {
+        return repository.findAllActiveForExport();
+    }
+
+    public ComplianceStatsResponseDTO getStatistics() {
+        long totalRecords = repository.countActiveRecords();
+
+        List<Object[]> statusCounts = repository.countByStatus();
+        Map<String, Long> countByStatus = new LinkedHashMap<>();
+        for (Object[] row : statusCounts) {
+            String status = (String) row[0];
+            long count = ((Number) row[1]).longValue();
+            countByStatus.put(status, count);
+        }
+
+        BigDecimal avgScore = repository.findAverageComplianceScore();
+        if (avgScore != null) {
+            avgScore = avgScore.setScale(2, RoundingMode.HALF_UP);
+        } else {
+            avgScore = BigDecimal.ZERO;
+        }
+
+        long overdueCount = repository.countOverdueRecords(LocalDate.now(), COMPLIANT_STATUS);
+
+        return ComplianceStatsResponseDTO.builder()
+                .totalRecords(totalRecords)
+                .countByStatus(countByStatus)
+                .averageComplianceScore(avgScore)
+                .overdueCount(overdueCount)
+                .build();
+    }
+}

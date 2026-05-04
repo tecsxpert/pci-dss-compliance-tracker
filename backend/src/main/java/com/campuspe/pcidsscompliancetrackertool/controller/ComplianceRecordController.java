@@ -1,0 +1,281 @@
+package com.campuspe.pcidsscompliancetrackertool.controller;
+
+import com.campuspe.pcidsscompliancetrackertool.config.RoleConstants;
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceRecordResponseDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceStatsResponseDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.ComplianceUpdateRequestDTO;
+import com.campuspe.pcidsscompliancetrackertool.dto.CreateComplianceRecordDto;
+import com.campuspe.pcidsscompliancetrackertool.dto.PagedResponseDto;
+import com.campuspe.pcidsscompliancetrackertool.service.ComplianceRecordService;
+import com.campuspe.pcidsscompliancetrackertool.util.PageableBuilder;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/compliance-records")
+@Tag(name = "Compliance Records", description = "Endpoints for PCI-DSS compliance record management")
+@Validated
+public class ComplianceRecordController {
+
+    private final ComplianceRecordService complianceRecordService;
+
+    public ComplianceRecordController(ComplianceRecordService complianceRecordService) {
+        this.complianceRecordService = complianceRecordService;
+    }
+
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Create a compliance record",
+            description = "Creates a new PCI-DSS compliance record. Accessible by ADMIN and MANAGER roles."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Record created successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceRecordResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error in request body",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @PostMapping
+    @PreAuthorize(RoleConstants.HAS_ROLE_ADMIN_OR_MANAGER)
+    public ResponseEntity<ComplianceRecordResponseDTO> createRecord(
+            @Valid @RequestBody CreateComplianceRecordDto dto,
+            Authentication authentication) {
+
+        String username = (authentication != null) ? authentication.getName() : "system";
+        ComplianceRecordResponseDTO created = complianceRecordService.createRecord(dto, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    // ── Get by ID ────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Get a compliance record by ID",
+            description = "Retrieves a single active (non-deleted) compliance record by its UUID."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Record found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceRecordResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Compliance record not found or soft-deleted",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @GetMapping("/{id}")
+    @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
+    public ResponseEntity<ComplianceRecordResponseDTO> getRecordById(
+            @Parameter(description = "UUID of the compliance record", required = true)
+            @PathVariable UUID id) {
+
+        ComplianceRecordResponseDTO response = complianceRecordService.getRecordById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Paginated list of all active records ─────────────────────────────────
+
+
+    @Operation(
+            summary = "List all compliance records (paginated)",
+            description = "Returns a paginated, sorted list of all active (non-deleted) " +
+                          "compliance records."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Paginated list returned successfully",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid pagination or sort parameters",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @GetMapping
+    @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
+    public ResponseEntity<PagedResponseDto<ComplianceRecordResponseDTO>> getAllRecords(
+            @Parameter(description = "Zero-based page index")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+
+            @Parameter(description = "Page size (max 100)")
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+
+            @Parameter(description = "Field to sort by")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Pageable pageable = PageableBuilder.buildPageable(page, size, sortBy, sortDir);
+        PagedResponseDto<ComplianceRecordResponseDTO> response =
+                PagedResponseDto.fromPage(complianceRecordService.getAllRecords(pageable));
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Update a compliance record",
+            description = "Partially updates an existing compliance record. " +
+                          "Only non-null fields in the request body are applied."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Record updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceRecordResponseDTO.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error in request body",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Compliance record not found",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @PutMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ROLE_ADMIN_OR_MANAGER)
+    public ResponseEntity<ComplianceRecordResponseDTO> updateRecord(
+            @Parameter(description = "UUID of the compliance record", required = true)
+            @PathVariable UUID id,
+            @Valid @RequestBody ComplianceUpdateRequestDTO dto) {
+
+        ComplianceRecordResponseDTO updated = complianceRecordService.updateRecord(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ── Soft-delete ──────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Soft-delete a compliance record",
+            description = "Marks the record as deleted (isDeleted = true). " +
+                          "The record is never physically removed."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Record soft-deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Compliance record not found",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @DeleteMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ROLE_ADMIN)
+    public ResponseEntity<Void> deleteRecord(
+            @Parameter(description = "UUID of the compliance record", required = true)
+            @PathVariable UUID id) {
+
+        complianceRecordService.softDeleteRecord(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Search (paginated) ───────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Search compliance records (paginated)",
+            description = "Case-insensitive keyword search across title, description, " +
+                          "and requirementId. Returns paginated, sorted results."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Search results returned successfully",
+                    content = @Content(mediaType = "application/json")
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid search or pagination parameters",
+                    content = @Content(mediaType = "application/json")
+            )
+    })
+    @GetMapping("/search")
+    @PreAuthorize(RoleConstants.IS_AUTHENTICATED)
+    public ResponseEntity<PagedResponseDto<ComplianceRecordResponseDTO>> searchRecords(
+            @Parameter(description = "Search keyword", required = true)
+            @RequestParam("q") String q,
+
+            @Parameter(description = "Zero-based page index")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+
+            @Parameter(description = "Page size (max 100)")
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+
+            @Parameter(description = "Field to sort by")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Pageable pageable = PageableBuilder.buildPageable(page, size, sortBy, sortDir);
+        PagedResponseDto<ComplianceRecordResponseDTO> response =
+                PagedResponseDto.fromPage(complianceRecordService.searchRecords(q, pageable));
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Statistics ────────────────────────────────────────────────────────────
+
+    @Operation(
+            summary = "Get compliance statistics",
+            description = "Returns a summary with total records, count per status, " +
+                          "average compliance score, and count of overdue items " +
+                          "(dueDate before today and status ≠ COMPLIANT)."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Statistics returned successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ComplianceStatsResponseDTO.class)
+                    )
+            )
+    })
+    @GetMapping("/stats")
+    @PreAuthorize(RoleConstants.HAS_ROLE_ADMIN)
+    public ResponseEntity<ComplianceStatsResponseDTO> getStatistics() {
+
+        ComplianceStatsResponseDTO stats = complianceRecordService.getStatistics();
+        return ResponseEntity.ok(stats);
+    }
+}

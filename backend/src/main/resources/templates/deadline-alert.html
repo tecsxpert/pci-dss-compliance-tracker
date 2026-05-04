@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Deadline Approaching</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .header { background: linear-gradient(135deg, #f57c00, #e65100); color: #fff; padding: 24px 30px; }
+        .header h1 { margin: 0; font-size: 22px; }
+        .body { padding: 30px; color: #333; line-height: 1.6; }
+        .days-badge { display: inline-block; padding: 8px 20px; border-radius: 20px; background: #fff3e0; color: #e65100; font-size: 20px; font-weight: 700; margin: 10px 0; }
+        .detail-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .detail-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .detail-table td:first-child { font-weight: 600; color: #555; width: 40%; }
+        .cta { display: inline-block; margin-top: 20px; padding: 12px 28px; background: #f57c00; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .footer { padding: 16px 30px; background: #f9f9f9; color: #999; font-size: 12px; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>⏰ Deadline Approaching</h1>
+    </div>
+    <div class="body">
+        <p>A PCI-DSS compliance record assigned to you is approaching its deadline:</p>
+
+        <div style="text-align: center;">
+            <span class="days-badge" th:text="${daysRemaining} + ' days remaining'">5 days remaining</span>
+        </div>
+
+        <table class="detail-table">
+            <tr>
+                <td>Requirement</td>
+                <td th:text="${requirementId}">Req-3.4</td>
+            </tr>
+            <tr>
+                <td>Title</td>
+                <td th:text="${title}">Encryption Key Management</td>
+            </tr>
+            <tr>
+                <td>Due Date</td>
+                <td th:text="${dueDate}">2026-05-05</td>
+            </tr>
+            <tr>
+                <td>Current Status</td>
+                <td th:text="${status}">IN_PROGRESS</td>
+            </tr>
+            <tr>
+                <td>Assigned To</td>
+                <td th:text="${assignedTo}">user@company.com</td>
+            </tr>
+        </table>
+
+        <p>Please ensure all required evidence and actions are completed before the deadline.</p>
+
+        <a class="cta" href="#">Take Action Now</a>
+    </div>
+    <div class="footer">
+        PCI-DSS Compliance Tracker — Automated Alert
+    </div>
+</div>
+</body>
+</html>
