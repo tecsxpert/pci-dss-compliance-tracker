@@ -1,12 +1,12 @@
 # ============================================================================
 # PCI-DSS Compliance Tracker — Application Configuration
-# All sensitive values should be injected via environment variables
+# All sensitive values injected via environment variables.
 # ============================================================================
 
-server:
-  port: ${SERVER_PORT:8080}
-
 spring:
+  profiles:
+    active: ${SPRING_PROFILE:prod}
+
   application:
     name: pci-dss-compliance-tracker
 
@@ -16,6 +16,10 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 30000
 
   # JPA / Hibernate
   jpa:
@@ -26,12 +30,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        # Batch inserts/updates to reduce round-trips (Day 14)
+        jdbc.batch_size: 25
+        order_inserts: true
+        order_updates: true
 
   # Flyway
-  # BUG-1 FIX: baseline-on-migrate lets Flyway treat an existing schema as
-  # baseline version 1 instead of failing with "table already exists".
-  # clean-disabled=true prevents accidental data loss; never set it false in prod.
-  # out-of-order=true lets team members merge migration branches freely.
+  # baseline-on-migrate: treats existing schema as v0 instead of failing.
+  # clean-disabled=true prevents accidental data loss in prod.
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -40,10 +46,10 @@ spring:
     clean-disabled: true
     out-of-order: true
     validate-on-migrate: true
+    mixed: true   # required for CREATE INDEX CONCURRENTLY in V4
 
   # Redis
-  # BUG-2 FIX: Add connection/command timeouts and Lettuce pool so that a
-  # temporarily unavailable Redis on startup does not crash the application.
+  # BUG-2 FIX: connection/command timeouts + Lettuce pool for resilience.
   data:
     redis:
       host: ${REDIS_HOST:redis}
@@ -89,3 +95,17 @@ scheduler:
     overdue-reminder: ${SCHEDULER_CRON_OVERDUE:0 0 8 * * ?}
     deadline-alert: ${SCHEDULER_CRON_DEADLINE:0 0 9 * * ?}
     weekly-summary: ${SCHEDULER_CRON_WEEKLY:0 0 7 ? * MON}
+
+# Spring Actuator — expose health and info only; details require authentication
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+server:
+  port: ${SERVER_PORT:8080}
+

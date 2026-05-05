@@ -209,6 +209,54 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!-- JaCoCo: line coverage report + enforce >= 80% coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <!-- Instruments the JVM before tests run -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- Generates HTML report in target/site/jacoco/ and enforces threshold -->
+                    <execution>
+                        <id>report-and-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <!-- Build fails if line coverage drops below 80% -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <!-- Exclude classes that don't require unit tests -->
+                            <excludes>
+                                <exclude>com/campuspe/pcidsscompliancetrackertool/entity/**</exclude>
+                                <exclude>com/campuspe/pcidsscompliancetrackertool/dto/**</exclude>
+                                <exclude>com/campuspe/pcidsscompliancetrackertool/config/**</exclude>
+                                <exclude>com/campuspe/pcidsscompliancetrackertool/PciDssComplianceTrackerApplication.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
