@@ -1,12 +1,12 @@
 # ============================================================================
 # PCI-DSS Compliance Tracker — Application Configuration
-# All sensitive values should be injected via environment variables
+# All sensitive values injected via environment variables.
 # ============================================================================
 
-server:
-  port: ${SERVER_PORT:8080}
-
 spring:
+  profiles:
+    active: ${SPRING_PROFILE:prod}
+
   application:
     name: pci-dss-compliance-tracker
 
@@ -16,6 +16,10 @@ spring:
     username: postgres
     password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 30000
 
   # JPA / Hibernate
   jpa:
@@ -26,18 +30,39 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        # Batch inserts/updates to reduce round-trips (Day 14)
+        jdbc.batch_size: 25
+        order_inserts: true
+        order_updates: true
 
   # Flyway
+  # baseline-on-migrate: treats existing schema as v0 instead of failing.
+  # clean-disabled=true prevents accidental data loss in prod.
   flyway:
     enabled: false
     locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    clean-disabled: true
+    out-of-order: true
+    validate-on-migrate: true
+    mixed: true   # required for CREATE INDEX CONCURRENTLY in V4
 
   # Redis
+  # BUG-2 FIX: connection/command timeouts + Lettuce pool for resilience.
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      connect-timeout: 5000
+      timeout: 3000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 2000ms
 
   # Mail (for notifications)
   mail:
@@ -70,3 +95,17 @@ scheduler:
     overdue-reminder: ${SCHEDULER_CRON_OVERDUE:0 0 8 * * ?}
     deadline-alert: ${SCHEDULER_CRON_DEADLINE:0 0 9 * * ?}
     weekly-summary: ${SCHEDULER_CRON_WEEKLY:0 0 7 ? * MON}
+
+# Spring Actuator — expose health and info only; details require authentication
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+server:
+  port: ${SERVER_PORT:8080}
+
