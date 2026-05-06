@@ -1,7 +1,9 @@
 package com.internship.tool.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+
 import io.jsonwebtoken.security.Keys;
 
 import org.springframework.stereotype.Component;
@@ -12,34 +14,48 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
+    // ✅ Secret key
     private static final String SECRET =
-            "mysecretkeymysecretkeymysecretkey";
+            "mysecretkeymysecretkeymysecretkey12";
 
-    private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
-    }
+    private final Key key =
+            Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    // ✅ Generate Token
+    // ✅ Generate token
     public String generateToken(String email) {
 
         return Jwts.builder()
+
                 .setSubject(email)
+
                 .setIssuedAt(new Date())
+
                 .setExpiration(
-                        new Date(System.currentTimeMillis() + 1000 * 60 * 60)
+                        new Date(
+                                System.currentTimeMillis()
+                                        + 1000 * 60 * 60
+                        )
                 )
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+
+                .signWith(
+                        key,
+                        SignatureAlgorithm.HS256
+                )
+
                 .compact();
     }
 
-    // ✅ Extract Email
-    public String extractEmail(String token) {
+    // ✅ Extract claims
+    public Claims extractClaims(String token) {
 
         return Jwts.parserBuilder()
-                .setSigningKey(getKey())
+
+                .setSigningKey(key)
+
                 .build()
+
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+
+                .getBody();
     }
 }
