@@ -26,18 +26,23 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // ✅ Public APIs
+                // PUBLIC APIs
                 .requestMatchers(
                         "/auth/**",
                         "/swagger-ui/**",
                         "/v3/api-docs/**"
                 ).permitAll()
 
-                // ✅ Protected APIs
-                .anyRequest().authenticated()
+                // SECURED APIs
+                .requestMatchers(
+                        "/users/**",
+                        "/files/**",
+                        "/email/**"
+                ).authenticated()
+
+                .anyRequest().permitAll()
             )
 
-            // ✅ JWT Filter
             .addFilterBefore(
                     jwtFilter,
                     UsernamePasswordAuthenticationFilter.class

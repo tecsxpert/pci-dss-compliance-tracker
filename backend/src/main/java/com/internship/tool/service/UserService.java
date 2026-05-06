@@ -15,6 +15,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 public class UserService {
 
@@ -27,7 +29,8 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    // ✅ GET all users
+    // ✅ GET all users + REDIS CACHE
+    @Cacheable("users")
     public List<UserDTO> getAllUsers() {
 
         logger.info("Fetching all users");

@@ -1,34 +1,36 @@
 package com.internship.tool.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import java.io.Serializable;
 
-public class UserDTO {
+public class UserDTO implements Serializable {
 
-    @NotBlank(message = "Name cannot be empty")
+    private static final long serialVersionUID = 1L;
+
     private String name;
-
-    @Email(message = "Invalid email format")
-    @NotBlank(message = "Email cannot be empty")
     private String email;
 
-    public UserDTO() {}
+    // Default constructor
+    public UserDTO() {
+    }
 
+    // Parameterized constructor
     public UserDTO(String name, String email) {
         this.name = name;
         this.email = email;
     }
 
+    // Getters
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getEmail() {
         return email;
+    }
+
+    // Setters
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setEmail(String email) {
