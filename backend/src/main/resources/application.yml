@@ -11,8 +11,8 @@ spring:
 
   # PostgreSQL Database
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:pci_dss_db}
-    username: postgres
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:pci_dss_db}
+    username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
 
@@ -34,16 +34,16 @@ spring:
   # Redis
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
   # Mail
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: jonnalagaddadevunidayas7@gmail.com
-    password: fupwtahtnsvhkeqh
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
 
     properties:
       mail:
@@ -54,9 +54,9 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: mysecretkeymysecretkeymysecretkey12
-  expiration: 86400000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 # AI Service
 ai-service:
-  base-url: http://localhost:5000
+  base-url: ${AI_SERVICE_URL:http://ai-service:5000}
