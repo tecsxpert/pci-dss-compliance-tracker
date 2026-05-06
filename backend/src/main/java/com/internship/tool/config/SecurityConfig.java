@@ -25,10 +25,19 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
+
+                // ✅ Public APIs
+                .requestMatchers(
+                        "/auth/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**"
+                ).permitAll()
+
+                // ✅ Protected APIs
                 .anyRequest().authenticated()
             )
 
+            // ✅ JWT Filter
             .addFilterBefore(
                     jwtFilter,
                     UsernamePasswordAuthenticationFilter.class
