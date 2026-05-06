@@ -7,6 +7,7 @@ import com.internship.tool.dto.ApiResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -26,6 +27,7 @@ public class TestController {
     // ✅ GET all users
     @GetMapping("/users")
     public ApiResponse<List<UserDTO>> getUsers() {
+
         List<UserDTO> users = userService.getAllUsers();
 
         return new ApiResponse<>(
@@ -37,11 +39,15 @@ public class TestController {
 
     // ✅ PAGINATION (clean response)
     @GetMapping("/users/page")
-    public ApiResponse<Map<String, Object>> getUsersWithPagination(Pageable pageable) {
+    public ApiResponse<Map<String, Object>> getUsersWithPagination(
+            Pageable pageable
+    ) {
 
-        Page<UserDTO> result = userService.getUsersWithPagination(pageable);
+        Page<UserDTO> result =
+                userService.getUsersWithPagination(pageable);
 
         Map<String, Object> response = new HashMap<>();
+
         response.put("content", result.getContent());
         response.put("totalElements", result.getTotalElements());
         response.put("totalPages", result.getTotalPages());
@@ -55,7 +61,9 @@ public class TestController {
 
     // ✅ POST
     @PostMapping("/users")
-    public ApiResponse<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
+    public ApiResponse<UserDTO> createUser(
+            @Valid @RequestBody UserDTO userDTO
+    ) {
 
         UserDTO savedUser = userService.saveUser(userDTO);
 
@@ -68,7 +76,9 @@ public class TestController {
 
     // ✅ DELETE
     @DeleteMapping("/users/{id}")
-    public ApiResponse<String> deleteUser(@PathVariable Long id) {
+    public ApiResponse<String> deleteUser(
+            @PathVariable Long id
+    ) {
 
         userService.deleteUser(id);
 
@@ -83,9 +93,11 @@ public class TestController {
     @PutMapping("/users/{id}")
     public ApiResponse<UserDTO> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody UserDTO userDTO) {
+            @Valid @RequestBody UserDTO userDTO
+    ) {
 
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
+        UserDTO updatedUser =
+                userService.updateUser(id, userDTO);
 
         return new ApiResponse<>(
                 "success",
@@ -94,7 +106,7 @@ public class TestController {
         );
     }
 
-    // ADVANCED FILTERING (clean response)
+    // ✅ ADVANCED FILTERING
     @GetMapping("/users/search")
     public ApiResponse<Map<String, Object>> searchUsers(
             @RequestParam(required = false) String name,
@@ -102,9 +114,11 @@ public class TestController {
             Pageable pageable
     ) {
 
-        Page<UserDTO> result = userService.searchUsers(name, email, pageable);
+        Page<UserDTO> result =
+                userService.searchUsers(name, email, pageable);
 
         Map<String, Object> response = new HashMap<>();
+
         response.put("content", result.getContent());
         response.put("totalElements", result.getTotalElements());
         response.put("totalPages", result.getTotalPages());
@@ -116,15 +130,34 @@ public class TestController {
         );
     }
 
-    // JPQL SEARCH (Day 7)
+    // ✅ JPQL SEARCH (Day 7)
     @GetMapping("/users/search/jpql")
-    public ApiResponse<List<UserDTO>> searchUsersJPQL(@RequestParam String name) {
+    public ApiResponse<List<UserDTO>> searchUsersJPQL(
+            @RequestParam String name
+    ) {
 
-        List<UserDTO> users = userService.searchUsersJPQL(name);
+        List<UserDTO> users =
+                userService.searchUsersJPQL(name);
 
         return new ApiResponse<>(
                 "success",
                 "Users fetched using JPQL",
+                users
+        );
+    }
+
+    // ✅ NATIVE SQL SEARCH (Day 7 FINAL)
+    @GetMapping("/users/native-search")
+    public ApiResponse<List<UserDTO>> searchUsersNative(
+            @RequestParam String name
+    ) {
+
+        List<UserDTO> users =
+                userService.searchUsersNative(name);
+
+        return new ApiResponse<>(
+                "success",
+                "Users fetched using Native SQL",
                 users
         );
     }
