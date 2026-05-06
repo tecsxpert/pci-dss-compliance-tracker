@@ -1,37 +1,84 @@
 package com.internship.tool.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 🔥 Validation errors
+    // 🔥 VALIDATION ERRORS
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, Object>> handleValidationException(
+            MethodArgumentNotValidException ex
+    ) {
 
-        Map<String, String> errors = new HashMap<>();
+        Map<String, String> validationErrors =
+                new HashMap<>();
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        validationErrors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
+
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put("status", 400);
+        response.put("timestamp", LocalDateTime.now());
+        response.put("errors", validationErrors);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.BAD_REQUEST
         );
-
-        return errors;
     }
 
-    // 🔥 User Not Found error
+    // 🔥 USER NOT FOUND
     @ExceptionHandler(UserNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleUserNotFound(UserNotFoundException ex) {
+    public ResponseEntity<Map<String, Object>> handleUserNotFound(
+            UserNotFoundException ex
+    ) {
 
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
+        Map<String, Object> response =
+                new HashMap<>();
 
-        return error;
+        response.put("status", 404);
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    // 🔥 GENERAL EXCEPTION
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneralException(
+            Exception ex
+    ) {
+
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put("status", 500);
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now());
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 }
