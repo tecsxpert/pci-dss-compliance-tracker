@@ -1,6 +1,5 @@
 # ============================================================================
 # PCI-DSS Compliance Tracker — Application Configuration
-# All sensitive values should be injected via environment variables
 # ============================================================================
 
 server:
@@ -39,12 +38,13 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
-  # Mail (for notifications)
+  # Mail
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: smtp.gmail.com
+    port: 587
+    username: jonnalagaddadevunidayas7@gmail.com
+    password: fupwtahtnsvhkeqh
+
     properties:
       mail:
         smtp:
@@ -54,9 +54,9 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
+  secret: mysecretkeymysecretkeymysecretkey12
+  expiration: 86400000
 
 # AI Service
 ai-service:
-  base-url: ${AI_SERVICE_URL:http://localhost:5000}
+  base-url: http://localhost:5000
